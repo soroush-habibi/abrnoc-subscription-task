@@ -23,6 +23,8 @@ interface invoice {
     endTime?: Date
 }
 
+const timers: NodeJS.Timer[] = [];
+
 export default class db {
     private static client: mongodb.MongoClient
     static async connect(func: (client: mongodb.MongoClient) => void) {
@@ -89,7 +91,7 @@ export default class db {
             userId: mongodb.ObjectId.createFromHexString(userId)
         });
 
-        await this.addInvoice(String(result.insertedId), userId);
+        await this.addInvoice(String(result.insertedId), userId, price);
 
         return result.insertedId;
     }
@@ -104,16 +106,52 @@ export default class db {
         return subs;
     }
 
-    static async addInvoice(subId: string, userId: string) {
+    static async addInvoice(subId: string, userId: string, price: number) {
         if (!mongodb.ObjectId.isValid(subId) || !mongodb.ObjectId.isValid(userId)) {
             throw new Error("User ID or sub Id is not valid");
+        } else if (price < 0) {
+            throw new Error("Price should be a positive number");
         }
 
-        const result = await this.client.db("abrnoc").collection("invoice").insertOne({
-            subId: mongodb.ObjectId.createFromHexString(subId),
+        await this.client.db("abrnoc").collection("invoice").insertOne({
             userId: mongodb.ObjectId.createFromHexString(userId),
-            startTime: Date.now()
+            subId: mongodb.ObjectId.createFromHexString(subId),
+            price: price,
+            startTime: new Date()
         });
-        //todo:add timer job
+
+        const timer = setInterval(async () => {
+            await this.client.db("abrnoc").collection("invoice").updateOne({
+                userId: mongodb.ObjectId.createFromHexString(userId)
+            }, {
+                $set: {
+                    endTime: new Date()
+                }
+            });
+
+            await this.creditReduction(userId, price);
+
+            await this.addInvoice(subId, userId, price);
+        }, 10000);
+
+        timers.push(timer);
+    }
+
+    static async creditReduction(userId: string, price: number): Promise<boolean> {
+        if (!mongodb.ObjectId.isValid(userId)) {
+            throw new Error("User ID is not valid");
+        } else if (price < 0) {
+            throw new Error("Price should be a positive number");
+        }
+
+        const result = await this.client.db("abrnoc").collection("customer").updateOne({
+            _id: mongodb.ObjectId.createFromHexString(userId)
+        }, {
+            $inc: {
+                credit: -price
+            }
+        });
+
+        return result.modifiedCount == 1 ? true : false;
     }
 }
