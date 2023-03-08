@@ -5,8 +5,22 @@ interface user {
     _id: mongodb.ObjectId,
     username: string,
     password: string,
-    credit: number,
-    subs: mongodb.ObjectId[]
+    credit: number
+}
+
+interface subscription {
+    _id: mongodb.ObjectId
+    name: string,
+    price: number,
+    userId: mongodb.ObjectId
+}
+
+interface invoice {
+    _id: mongodb.ObjectId,
+    userId: mongodb.ObjectId,
+    subId: mongodb.ObjectId,
+    startTime: Date,
+    endTime?: Date
 }
 
 export default class db {
@@ -58,5 +72,48 @@ export default class db {
         } else {
             throw new Error("Password is wrong");
         }
+    }
+
+    static async addSubscription(name: string, price: number, userId: string): Promise<mongodb.ObjectId> {
+        if (name.length < 5) {
+            throw new Error("Name should be bigger than 4 character");
+        } else if (price < 0) {
+            throw new Error("Price number should be positive");
+        } else if (!mongodb.ObjectId.isValid(userId)) {
+            throw new Error("User ID is not valid");
+        }
+
+        const result = await this.client.db("abrnoc").collection("subs").insertOne({
+            name: name,
+            price: price,
+            userId: mongodb.ObjectId.createFromHexString(userId)
+        });
+
+        await this.addInvoice(String(result.insertedId), userId);
+
+        return result.insertedId;
+    }
+
+    static async getSubscriptions(userId: string): Promise<subscription[]> {
+        if (!mongodb.ObjectId.isValid(userId)) {
+            throw new Error("User ID is not valid");
+        }
+
+        const subs = await this.client.db("abrnoc").collection<subscription>("subs").find({ userId: mongodb.ObjectId.createFromHexString(userId) }).toArray();
+
+        return subs;
+    }
+
+    static async addInvoice(subId: string, userId: string) {
+        if (!mongodb.ObjectId.isValid(subId) || !mongodb.ObjectId.isValid(userId)) {
+            throw new Error("User ID or sub Id is not valid");
+        }
+
+        const result = await this.client.db("abrnoc").collection("invoice").insertOne({
+            subId: mongodb.ObjectId.createFromHexString(subId),
+            userId: mongodb.ObjectId.createFromHexString(userId),
+            startTime: Date.now()
+        });
+        //todo:add timer job
     }
 }
