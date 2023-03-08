@@ -136,14 +136,12 @@ export default class controller {
                         message: "delete operation failed"
                     });
                 }
-                client.close();
             }).catch((err) => {
                 res.status(400).json({
                     success: false,
                     body: null,
                     message: err.message
                 });
-                client.close();
             });
         });
     }

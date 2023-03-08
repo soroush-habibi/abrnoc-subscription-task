@@ -1,6 +1,6 @@
 import mongodb from 'mongodb';
 import bcrypt from 'bcrypt';
-import nodeCron from 'node-cron';
+import Nodeschedule from 'node-schedule';
 
 interface user {
     _id: mongodb.ObjectId,
@@ -24,13 +24,6 @@ interface invoice {
     startTime: Date,
     endTime?: Date
 }
-
-interface timer {
-    subId: mongodb.ObjectId,
-    counter: nodeCron.ScheduledTask
-}
-
-const timers: timer[] = [];
 
 export default class db {
     private static client: mongodb.MongoClient
@@ -129,30 +122,32 @@ export default class db {
             throw new Error("Can't find sub id");
         }
 
+        let timeNow = new Date();
         const { insertedId } = await this.client.db("abrnoc").collection("invoice").insertOne({
             userId: mongodb.ObjectId.createFromHexString(userId),
             subId: mongodb.ObjectId.createFromHexString(subId),
             price: price,
-            startTime: new Date()
+            startTime: timeNow
         });
 
-        const timer = nodeCron.schedule('*/10 * * * * *', async () => {
-            await this.client.db("abrnoc").collection("invoice").updateOne({
-                _id: insertedId
-            }, {
-                $set: {
-                    endTime: new Date()
-                }
-            });
+        const timer = Nodeschedule.scheduleJob(new Date(timeNow.getTime() + (1000 * 10)), async () => {
+            const sub = await this.client.db("abrnoc").collection<subscription>("subs").findOne({ _id: mongodb.ObjectId.createFromHexString(subId) });
+            if (sub?.active) {
+                await this.client.db("abrnoc").collection("invoice").updateOne({
+                    _id: insertedId
+                }, {
+                    $set: {
+                        endTime: new Date()
+                    }
+                });
 
-            await this.creditReduction(userId, price);
+                await this.creditReduction(userId, price);
 
-            await this.addInvoice(subId, userId, price);
-
-            timer.stop();
+                await this.addInvoice(subId, userId, price);
+            } else {
+                this.deleteIncompleteInvoice(subId);
+            }
         });
-
-        timers.push({ subId: mongodb.ObjectId.createFromHexString(subId), counter: timer });
     }
 
     static async deleteIncompleteInvoice(subId: string): Promise<boolean> {
@@ -215,7 +210,7 @@ export default class db {
 
         const sub = await this.client.db("abrnoc").collection<subscription>("subs").findOne({ _id: mongodb.ObjectId.createFromHexString(subId) });
 
-        if (sub?.active) {
+        if (!sub?.active) {
             throw new Error("This sub is already deactivated");
         }
 
@@ -226,14 +221,6 @@ export default class db {
                 active: false
             }
         });
-
-        for (let i of timers) {
-            if (String(i.subId) === subId) {
-                i.counter.stop();
-                await this.deleteIncompleteInvoice(String(i.subId));
-                break;
-            }
-        }
 
         return result.acknowledged;
     }
