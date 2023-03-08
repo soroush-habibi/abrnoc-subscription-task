@@ -136,12 +136,32 @@ export default class db {
         });
         return result.modifiedCount == 1 ? true : false;
     }
+    static async increaseCredit(userId, price) {
+        if (!mongodb.ObjectId.isValid(userId)) {
+            throw new Error("User ID is not valid");
+        }
+        else if (price < 0) {
+            throw new Error("Price should be a positive number");
+        }
+        const result = await this.client.db("abrnoc").collection("customer").updateOne({
+            _id: mongodb.ObjectId.createFromHexString(userId)
+        }, {
+            $inc: {
+                credit: price
+            }
+        });
+        return result.modifiedCount == 1 ? true : false;
+    }
     static async deactiveSubscription(subId) {
         if (!mongodb.ObjectId.isValid(subId)) {
             throw new Error("Sub ID is not valid");
         }
         if (!await this.existsSub(subId)) {
             throw new Error("Can't find sub id");
+        }
+        const sub = await this.client.db("abrnoc").collection("subs").findOne({ _id: mongodb.ObjectId.createFromHexString(subId) });
+        if (sub?.active) {
+            throw new Error("This sub is already deactivated");
         }
         const result = await this.client.db("abrnoc").collection("subs").updateOne({
             _id: mongodb.ObjectId.createFromHexString(subId)
