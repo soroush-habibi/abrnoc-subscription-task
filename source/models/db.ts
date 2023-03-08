@@ -1,5 +1,6 @@
 import mongodb from 'mongodb';
 import bcrypt from 'bcrypt';
+import nodeCron from 'node-cron';
 
 interface user {
     _id: mongodb.ObjectId,
@@ -13,6 +14,7 @@ interface subscription {
     name: string,
     price: number,
     userId: mongodb.ObjectId
+    active: boolean
 }
 
 interface invoice {
@@ -23,7 +25,12 @@ interface invoice {
     endTime?: Date
 }
 
-const timers: NodeJS.Timer[] = [];
+interface timer {
+    subId: mongodb.ObjectId,
+    counter: nodeCron.ScheduledTask
+}
+
+const timers: timer[] = [];
 
 export default class db {
     private static client: mongodb.MongoClient
@@ -37,6 +44,12 @@ export default class db {
         const user = await this.client.db("abrnoc").collection("customer").countDocuments({ username: username });
 
         return user > 0 ? true : false;
+    }
+
+    static async existsSub(subId: string): Promise<boolean> {
+        const sub = await this.client.db("abrnoc").collection("subs").countDocuments({ _id: mongodb.ObjectId.createFromHexString(subId) });
+
+        return sub > 0 ? true : false;
     }
 
     static async registerUser(username: string, password: string): Promise<mongodb.ObjectId> {
@@ -88,7 +101,8 @@ export default class db {
         const result = await this.client.db("abrnoc").collection("subs").insertOne({
             name: name,
             price: price,
-            userId: mongodb.ObjectId.createFromHexString(userId)
+            userId: mongodb.ObjectId.createFromHexString(userId),
+            active: true
         });
 
         await this.addInvoice(String(result.insertedId), userId, price);
@@ -111,18 +125,20 @@ export default class db {
             throw new Error("User ID or sub Id is not valid");
         } else if (price < 0) {
             throw new Error("Price should be a positive number");
+        } if (!await this.existsSub(subId)) {
+            throw new Error("Can't find sub id");
         }
 
-        await this.client.db("abrnoc").collection("invoice").insertOne({
+        const { insertedId } = await this.client.db("abrnoc").collection("invoice").insertOne({
             userId: mongodb.ObjectId.createFromHexString(userId),
             subId: mongodb.ObjectId.createFromHexString(subId),
             price: price,
             startTime: new Date()
         });
 
-        const timer = setInterval(async () => {
+        const timer = nodeCron.schedule('*/10 * * * * *', async () => {
             await this.client.db("abrnoc").collection("invoice").updateOne({
-                userId: mongodb.ObjectId.createFromHexString(userId)
+                _id: insertedId
             }, {
                 $set: {
                     endTime: new Date()
@@ -132,9 +148,26 @@ export default class db {
             await this.creditReduction(userId, price);
 
             await this.addInvoice(subId, userId, price);
-        }, 10000);
 
-        timers.push(timer);
+            timer.stop();
+        });
+
+        timers.push({ subId: mongodb.ObjectId.createFromHexString(subId), counter: timer });
+    }
+
+    static async deleteIncompleteInvoice(subId: string): Promise<boolean> {
+        if (!mongodb.ObjectId.isValid(subId)) {
+            throw new Error("Sub ID is not valid");
+        } if (!await this.existsSub(subId)) {
+            throw new Error("Can't find sub id");
+        }
+
+        const result = await this.client.db("abrnoc").collection("invoice").deleteMany({
+            subId: mongodb.ObjectId.createFromHexString(subId),
+            endTime: { $exists: false }
+        });
+
+        return result.acknowledged;
     }
 
     static async creditReduction(userId: string, price: number): Promise<boolean> {
@@ -153,5 +186,31 @@ export default class db {
         });
 
         return result.modifiedCount == 1 ? true : false;
+    }
+
+    static async deactiveSubscription(subId: string): Promise<boolean> {
+        if (!mongodb.ObjectId.isValid(subId)) {
+            throw new Error("Sub ID is not valid");
+        } if (!await this.existsSub(subId)) {
+            throw new Error("Can't find sub id");
+        }
+
+        const result = await this.client.db("abrnoc").collection("subs").updateOne({
+            _id: mongodb.ObjectId.createFromHexString(subId)
+        }, {
+            $set: {
+                active: false
+            }
+        });
+
+        for (let i of timers) {
+            if (String(i.subId) === subId) {
+                i.counter.stop();
+                await this.deleteIncompleteInvoice(String(i.subId));
+                break;
+            }
+        }
+
+        return result.acknowledged;
     }
 }

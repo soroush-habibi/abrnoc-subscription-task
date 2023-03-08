@@ -8,4 +8,8 @@ router.post("/register", apiController.register);
 
 router.get("/login", apiController.login);
 
+router.post("/subscribe", apiController.subscribe);
+
+router.patch("/deactive", apiController.deactiveSub);
+
 export default router;

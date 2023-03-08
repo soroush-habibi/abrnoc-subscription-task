@@ -77,4 +77,74 @@ export default class controller {
             });
         });
     }
+    static subscribe(req, res) {
+        if (!req.body.name || !req.body.price || !req.body.userId) {
+            res.status(400).json({
+                success: false,
+                body: null,
+                message: "invalid input"
+            });
+            return;
+        }
+        db.connect((client) => {
+            db.addSubscription(req.body.name, Number(req.body.price), req.body.userId).then((value) => {
+                if (value) {
+                    res.status(201).json({
+                        success: true,
+                        body: String(value),
+                        message: "OK"
+                    });
+                }
+                else {
+                    res.status(500).json({
+                        success: false,
+                        body: null,
+                        message: "insertion failed"
+                    });
+                }
+            }).catch((err) => {
+                res.status(400).json({
+                    success: false,
+                    body: null,
+                    message: err.message
+                });
+            });
+        });
+    }
+    static deactiveSub(req, res) {
+        if (!req.body.subId) {
+            res.status(400).json({
+                success: false,
+                body: null,
+                message: "invalid input"
+            });
+            return;
+        }
+        db.connect((client) => {
+            db.deactiveSubscription(req.body.subId).then((value) => {
+                if (value) {
+                    res.status(201).json({
+                        success: true,
+                        body: null,
+                        message: "OK"
+                    });
+                }
+                else {
+                    res.status(500).json({
+                        success: false,
+                        body: null,
+                        message: "delete operation failed"
+                    });
+                }
+                client.close();
+            }).catch((err) => {
+                res.status(400).json({
+                    success: false,
+                    body: null,
+                    message: err.message
+                });
+                client.close();
+            });
+        });
+    }
 }
