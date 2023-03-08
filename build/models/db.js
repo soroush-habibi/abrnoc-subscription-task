@@ -25,7 +25,7 @@ export default class db {
             credit: 100,
             subs: []
         });
-        return result.acknowledged;
+        return result.insertedId;
     }
     static async loginUser(username, password) {
         if (username.length < 5) {

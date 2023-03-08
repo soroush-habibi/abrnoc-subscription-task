@@ -23,7 +23,7 @@ export default class db {
         return user > 0 ? true : false;
     }
 
-    static async registerUser(username: string, password: string): Promise<boolean> {
+    static async registerUser(username: string, password: string): Promise<mongodb.ObjectId> {
         if (username.length < 5) {
             throw new Error("Username should be bigger than 4 character");
         } else if (password.length < 5) {
@@ -39,7 +39,7 @@ export default class db {
             subs: []
         });
 
-        return result.acknowledged;
+        return result.insertedId;
     }
 
     static async loginUser(username: string, password: string): Promise<mongodb.ObjectId> {
