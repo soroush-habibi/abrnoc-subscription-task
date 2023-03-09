@@ -133,7 +133,7 @@ export default class db {
         const timer = Nodeschedule.scheduleJob(new Date(timeNow.getTime() + (1000 * 10)), async () => {
             const sub = await this.client.db("abrnoc").collection<subscription>("subs").findOne({ _id: mongodb.ObjectId.createFromHexString(subId) });
             if (sub?.active) {
-                await this.client.db("abrnoc").collection("invoice").updateOne({
+                const invoice = await this.client.db("abrnoc").collection("invoice").updateOne({
                     _id: insertedId
                 }, {
                     $set: {
@@ -141,11 +141,13 @@ export default class db {
                     }
                 });
 
-                await this.creditReduction(userId, price);
+                if (invoice.matchedCount != 0) {
+                    await this.creditReduction(userId, price);
 
-                await this.addInvoice(subId, userId, price);
+                    await this.addInvoice(subId, userId, price);
+                }
             } else {
-                this.deleteIncompleteInvoice(subId);
+                await this.deleteIncompleteInvoice(subId);
             }
         });
     }
@@ -221,6 +223,36 @@ export default class db {
                 active: false
             }
         });
+
+        await this.deleteIncompleteInvoice(subId);
+
+        return result.acknowledged;
+    }
+
+    static async activeSubscription(subId: string): Promise<boolean> {
+        if (!mongodb.ObjectId.isValid(subId)) {
+            throw new Error("Sub ID is not valid");
+        } if (!await this.existsSub(subId)) {
+            throw new Error("Can't find sub id");
+        }
+
+        const sub = await this.client.db("abrnoc").collection<subscription>("subs").findOne({ _id: mongodb.ObjectId.createFromHexString(subId) });
+
+        if (sub?.active) {
+            throw new Error("This sub is already activated");
+        }
+
+        const result = await this.client.db("abrnoc").collection("subs").updateOne({
+            _id: mongodb.ObjectId.createFromHexString(subId)
+        }, {
+            $set: {
+                active: true
+            }
+        });
+
+        if (sub) {
+            await this.addInvoice(subId, String(sub.userId), sub.price);
+        }
 
         return result.acknowledged;
     }

@@ -133,7 +133,7 @@ export default class controller {
         db.connect((client) => {
             db.deactiveSubscription(req.body.subId).then((value: boolean) => {
                 if (value) {
-                    res.status(201).json({
+                    res.status(200).json({
                         success: true,
                         body: null,
                         message: "OK"
@@ -142,7 +142,42 @@ export default class controller {
                     res.status(500).json({
                         success: false,
                         body: null,
-                        message: "delete operation failed"
+                        message: "operation failed"
+                    });
+                }
+            }).catch((err: Error) => {
+                res.status(400).json({
+                    success: false,
+                    body: null,
+                    message: err.message
+                });
+            });
+        });
+    }
+
+    static activeSub(req: express.Request, res: express.Response) {
+        if (!req.body.subId) {
+            res.status(400).json({
+                success: false,
+                body: null,
+                message: "invalid input"
+            });
+            return;
+        }
+
+        db.connect((client) => {
+            db.activeSubscription(req.body.subId).then((value: boolean) => {
+                if (value) {
+                    res.status(200).json({
+                        success: true,
+                        body: null,
+                        message: "OK"
+                    });
+                } else {
+                    res.status(500).json({
+                        success: false,
+                        body: null,
+                        message: "operation failed"
                     });
                 }
             }).catch((err: Error) => {

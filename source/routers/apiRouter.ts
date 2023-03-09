@@ -12,4 +12,6 @@ router.post("/subscribe", apiController.subscribe);
 
 router.patch("/deactive", apiController.deactiveSub);
 
+router.patch("/active", apiController.activeSub);
+
 export default router;
