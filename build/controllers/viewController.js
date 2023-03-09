@@ -6,13 +6,15 @@ export default class controller {
             next();
         }
         else {
-            const decode = JWT.verify(token, process.env.JWT_KEY || "testKey");
-            if (decode instanceof Object) {
-                res.locals.id = decode.id;
-                res.locals.password = decode.password;
-                res.redirect("/app");
+            try {
+                const decode = JWT.verify(token, process.env.JWT_KEY || "testKey");
+                if (decode instanceof Object) {
+                    res.locals.id = decode.id;
+                    res.locals.password = decode.password;
+                    res.redirect("/app");
+                }
             }
-            else {
+            catch (e) {
                 next();
             }
         }

@@ -80,25 +80,19 @@ export default class controller {
     static authentication(req, res, next) {
         const token = req.cookies.JWT;
         if (!token) {
-            res.status(403).json({
-                success: false,
-                body: null,
-                message: "Forbidden"
-            });
+            res.redirect("/");
         }
         else {
-            const decode = JWT.verify(token, process.env.JWT_KEY || "testKey");
-            if (decode instanceof Object) {
-                res.locals.id = decode.id;
-                res.locals.password = decode.password;
+            try {
+                const decode = JWT.verify(token, process.env.JWT_KEY || "testKey");
+                if (decode instanceof Object) {
+                    res.locals.id = decode.id;
+                    res.locals.password = decode.password;
+                }
                 next();
             }
-            else {
-                res.status(403).json({
-                    success: false,
-                    body: null,
-                    message: "Forbidden"
-                });
+            catch (e) {
+                res.redirect("/");
             }
         }
     }

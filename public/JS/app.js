@@ -9,7 +9,7 @@ async function loadData() {
         if (data.success) {
             username.innerHTML = data.body.username;
             id.innerHTML = "ID: " + data.body._id;
-            credit.innerHTML = data.body.credit;
+            credit.innerHTML = data.body.credit + "$";
         } else {
             alert(data.message)
         }

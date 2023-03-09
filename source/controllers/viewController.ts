@@ -8,13 +8,15 @@ export default class controller {
         if (!token) {
             next();
         } else {
-            const decode = JWT.verify(token, process.env.JWT_KEY || "testKey");
+            try {
+                const decode = JWT.verify(token, process.env.JWT_KEY || "testKey");
 
-            if (decode instanceof Object) {
-                res.locals.id = decode.id;
-                res.locals.password = decode.password;
-                res.redirect("/app")
-            } else {
+                if (decode instanceof Object) {
+                    res.locals.id = decode.id;
+                    res.locals.password = decode.password;
+                    res.redirect("/app");
+                }
+            } catch (e) {
                 next();
             }
         }
