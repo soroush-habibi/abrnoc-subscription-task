@@ -266,4 +266,32 @@ export default class controller {
             });
         });
     }
+    static getSubs(req, res) {
+        db.connect((client) => {
+            db.getSubscriptions(res.locals.id).then((value) => {
+                if (value) {
+                    res.status(200).json({
+                        success: true,
+                        body: value,
+                        message: "OK"
+                    });
+                }
+                else {
+                    res.status(500).json({
+                        success: false,
+                        body: null,
+                        message: "operation failed"
+                    });
+                }
+                client.close();
+            }).catch((err) => {
+                res.status(400).json({
+                    success: false,
+                    body: null,
+                    message: err.message
+                });
+                client.close();
+            });
+        });
+    }
 }

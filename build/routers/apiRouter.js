@@ -8,4 +8,5 @@ router.patch("/deactive", apiController.authentication, apiController.deactiveSu
 router.patch("/active", apiController.authentication, apiController.activeSub);
 router.delete("/delete", apiController.authentication, apiController.deleteSub);
 router.get("/profile", apiController.authentication, apiController.profile);
+router.get("/subs", apiController.authentication, apiController.getSubs);
 export default router;
