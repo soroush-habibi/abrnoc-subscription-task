@@ -25,6 +25,6 @@ db.connect(async (client) => {
         console.log(`App is running on port ${process.env.PORT || 3000}`);
     });
 }).catch((e) => {
-    console.log("mongodb is not running on port 27017");
+    console.log("Mongodb is not running on port 27017");
     process.exit(1);
 });

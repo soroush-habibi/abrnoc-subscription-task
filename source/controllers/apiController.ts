@@ -89,7 +89,11 @@ export default class controller {
         const token = req.cookies.JWT;
 
         if (!token) {
-            res.redirect("/");
+            res.status(403).json({
+                success: false,
+                body: null,
+                message: "Forbidden"
+            });
         } else {
             const decode = JWT.verify(token, process.env.JWT_KEY || "testKey");
 
@@ -98,7 +102,11 @@ export default class controller {
                 res.locals.password = decode.password;
                 next();
             } else {
-                res.redirect("/");
+                res.status(403).json({
+                    success: false,
+                    body: null,
+                    message: "Forbidden"
+                });
             }
         }
     }
@@ -185,6 +193,41 @@ export default class controller {
 
         db.connect((client) => {
             db.activeSubscription(req.body.subId).then((value: boolean) => {
+                if (value) {
+                    res.status(200).json({
+                        success: true,
+                        body: null,
+                        message: "OK"
+                    });
+                } else {
+                    res.status(500).json({
+                        success: false,
+                        body: null,
+                        message: "operation failed"
+                    });
+                }
+            }).catch((err: Error) => {
+                res.status(400).json({
+                    success: false,
+                    body: null,
+                    message: err.message
+                });
+            });
+        });
+    }
+
+    static deleteSub(req: express.Request, res: express.Response) {
+        if (!req.body.subId) {
+            res.status(400).json({
+                success: false,
+                body: null,
+                message: "invalid input"
+            });
+            return;
+        }
+
+        db.connect((client) => {
+            db.deleteSub(req.body.subId).then((value: boolean) => {
                 if (value) {
                     res.status(200).json({
                         success: true,

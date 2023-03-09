@@ -118,7 +118,7 @@ export default class db {
                 }
             }
             else {
-                await this.deleteIncompleteInvoice(subId);
+                await this.deleteIncompleteInvoice(subId).catch(e => { });
             }
         });
     }
@@ -209,6 +209,18 @@ export default class db {
         if (sub) {
             await this.addInvoice(subId, String(sub.userId), sub.price);
         }
+        return result.acknowledged;
+    }
+    static async deleteSub(subId) {
+        if (!mongodb.ObjectId.isValid(subId)) {
+            throw new Error("Sub ID is not valid");
+        }
+        if (!await this.existsSub(subId)) {
+            throw new Error("Can't find sub id");
+        }
+        const sub = await this.client.db("abrnoc").collection("subs").findOne({ _id: mongodb.ObjectId.createFromHexString(subId) });
+        await this.deleteIncompleteInvoice(String(sub?._id));
+        const result = await this.client.db("abrnoc").collection("subs").deleteOne({ _id: mongodb.ObjectId.createFromHexString(subId) });
         return result.acknowledged;
     }
     static async initializeDB() {
