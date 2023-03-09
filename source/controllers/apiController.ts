@@ -56,7 +56,7 @@ export default class controller {
             db.loginUser(decodeURIComponent(String(req.query.username)), decodeURIComponent(String(req.query.password))).then((value: mongodb.ObjectId) => {
                 if (value) {
                     const token = JWT.sign({
-                        username: decodeURIComponent(String(req.query.username)),
+                        id: String(value),
                         password: decodeURIComponent(String(req.query.password))
                     }, process.env.JWT_KEY || "testKey");
 
@@ -85,8 +85,26 @@ export default class controller {
         });
     }
 
+    static authentication(req: express.Request, res: express.Response, next: express.NextFunction) {
+        const token = req.cookies.JWT;
+
+        if (!token) {
+            res.redirect("/");
+        } else {
+            const decode = JWT.verify(token, process.env.JWT_KEY || "testKey");
+
+            if (decode instanceof Object) {
+                res.locals.id = decode.id;
+                res.locals.password = decode.password;
+                next();
+            } else {
+                res.redirect("/");
+            }
+        }
+    }
+
     static subscribe(req: express.Request, res: express.Response) {
-        if (!req.body.name || !req.body.price || !req.body.userId) {
+        if (!req.body.name || !req.body.price) {
             res.status(400).json({
                 success: false,
                 body: null,
@@ -96,7 +114,7 @@ export default class controller {
         }
 
         db.connect((client) => {
-            db.addSubscription(req.body.name, Number(req.body.price), req.body.userId).then((value: mongodb.ObjectId) => {
+            db.addSubscription(req.body.name, Number(req.body.price), res.locals.id).then((value: mongodb.ObjectId) => {
                 if (value) {
                     res.status(201).json({
                         success: true,

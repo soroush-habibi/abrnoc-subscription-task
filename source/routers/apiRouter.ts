@@ -8,10 +8,10 @@ router.post("/register", apiController.register);
 
 router.get("/login", apiController.login);
 
-router.post("/subscribe", apiController.subscribe);
+router.post("/subscribe", apiController.authentication, apiController.subscribe);
 
-router.patch("/deactive", apiController.deactiveSub);
+router.patch("/deactive", apiController.authentication, apiController.deactiveSub);
 
-router.patch("/active", apiController.activeSub);
+router.patch("/active", apiController.authentication, apiController.activeSub);
 
 export default router;

@@ -10,6 +10,15 @@ export default class db {
         const user = await this.client.db("abrnoc").collection("customer").countDocuments({ username: username });
         return user > 0 ? true : false;
     }
+    static async getUser(username) {
+        const user = await this.client.db("abrnoc").collection("customer").findOne({ username: username });
+        if (user) {
+            return user;
+        }
+        else {
+            throw new Error("Can't find user");
+        }
+    }
     static async existsSub(subId) {
         const sub = await this.client.db("abrnoc").collection("subs").countDocuments({ _id: mongodb.ObjectId.createFromHexString(subId) });
         return sub > 0 ? true : false;

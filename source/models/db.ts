@@ -39,6 +39,16 @@ export default class db {
         return user > 0 ? true : false;
     }
 
+    static async getUser(username: string): Promise<user> {
+        const user = await this.client.db("abrnoc").collection<user>("customer").findOne({ username: username });
+
+        if (user) {
+            return user;
+        } else {
+            throw new Error("Can't find user");
+        }
+    }
+
     static async existsSub(subId: string): Promise<boolean> {
         const sub = await this.client.db("abrnoc").collection("subs").countDocuments({ _id: mongodb.ObjectId.createFromHexString(subId) });
 
