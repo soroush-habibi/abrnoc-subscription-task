@@ -211,4 +211,8 @@ export default class db {
         }
         return result.acknowledged;
     }
+    static async initializeDB() {
+        await this.client.db("abrnoc").collection("subs").updateMany({}, { $set: { active: false } });
+        await this.client.db("abrnoc").collection("invoice").deleteMany({ endTime: { $exists: false } });
+    }
 }
