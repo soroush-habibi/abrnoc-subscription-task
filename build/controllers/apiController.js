@@ -288,4 +288,12 @@ export default class controller {
             });
         });
     }
+    static logout(req, res) {
+        res.clearCookie("JWT");
+        res.status(200).json({
+            success: true,
+            body: null,
+            message: "OK"
+        });
+    }
 }

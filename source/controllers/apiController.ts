@@ -300,4 +300,13 @@ export default class controller {
             });
         });
     }
+
+    static logout(req: express.Request, res: express.Response) {
+        res.clearCookie("JWT");
+        res.status(200).json({
+            success: true,
+            body: null,
+            message: "OK"
+        });
+    }
 }

@@ -20,4 +20,6 @@ router.get("/profile", apiController.authentication, apiController.profile);
 
 router.get("/subs", apiController.authentication, apiController.getSubs);
 
+router.get("/logout", apiController.logout);
+
 export default router;
