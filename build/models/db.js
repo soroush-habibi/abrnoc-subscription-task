@@ -10,8 +10,8 @@ export default class db {
         const user = await this.client.db("abrnoc").collection("customer").countDocuments({ username: username });
         return user > 0 ? true : false;
     }
-    static async getUser(username) {
-        const user = await this.client.db("abrnoc").collection("customer").findOne({ username: username });
+    static async getUser(userId) {
+        const user = await this.client.db("abrnoc").collection("customer").findOne({ _id: mongodb.ObjectId.createFromHexString(userId) }, { projection: { password: 0 } });
         if (user) {
             return user;
         }
@@ -36,8 +36,7 @@ export default class db {
         const result = await this.client.db("abrnoc").collection("customer").insertOne({
             username: username,
             password: bcrypt.hashSync(password, 10),
-            credit: 100,
-            subs: []
+            credit: 1000
         });
         return result.insertedId;
     }
@@ -102,7 +101,7 @@ export default class db {
             price: price,
             startTime: timeNow
         });
-        const timer = Nodeschedule.scheduleJob(new Date(timeNow.getTime() + (1000 * 10)), async () => {
+        Nodeschedule.scheduleJob(new Date(timeNow.getTime() + (1000 * 60 * 10)), async () => {
             const sub = await this.client.db("abrnoc").collection("subs").findOne({ _id: mongodb.ObjectId.createFromHexString(subId) });
             if (sub?.active) {
                 const invoice = await this.client.db("abrnoc").collection("invoice").updateOne({
