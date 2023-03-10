@@ -22,4 +22,6 @@ router.get("/subs", apiController.authentication, apiController.getSubs);
 
 router.get("/logout", apiController.logout);
 
+router.patch("/increase-credit", apiController.authentication, apiController.increaseCredit);
+
 export default router;

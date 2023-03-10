@@ -10,10 +10,10 @@ logout.addEventListener('click', async () => {
         if (data.success) {
             document.location = "/";
         } else {
-            alert(data.message)
+            alert(data.message);
         }
     } catch (e) {
-        alert(e.response.data.message)
+        alert(e.response.data.message);
     }
 });
 
@@ -26,10 +26,10 @@ async function loadData() {
             id.innerHTML = "ID: " + data.body._id;
             credit.innerHTML = data.body.credit + "$";
         } else {
-            alert(data.message)
+            alert(data.message);
         }
     } catch (e) {
-        alert(e.response.data.message)
+        alert(e.response.data.message);
     }
 }
 

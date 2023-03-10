@@ -309,4 +309,41 @@ export default class controller {
             message: "OK"
         });
     }
+
+    static increaseCredit(req: express.Request, res: express.Response) {
+        if (!req.body.price) {
+            res.status(400).json({
+                success: false,
+                body: null,
+                message: "invalid input"
+            });
+            return;
+        }
+
+        db.connect((client) => {
+            db.increaseCredit(res.locals.id, req.body.price).then((value: boolean) => {
+                if (value) {
+                    res.status(200).json({
+                        success: true,
+                        body: value,
+                        message: "OK"
+                    });
+                } else {
+                    res.status(500).json({
+                        success: false,
+                        body: null,
+                        message: "operation failed"
+                    });
+                }
+                client.close();
+            }).catch((err: Error) => {
+                res.status(400).json({
+                    success: false,
+                    body: null,
+                    message: err.message
+                });
+                client.close();
+            });
+        });
+    }
 }
