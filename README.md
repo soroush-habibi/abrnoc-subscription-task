@@ -9,7 +9,7 @@ Financial management project for user subscriptions
 1 - First you should run MongoDB database on port 27017      
 Open this link and follow the guide: https://www.mongodb.com/docs/manual/administration/install-community/    
 
-You can also use official ocker image of mongo:
+You can also use official docker image of mongo:
 
 ```bash
   docker pull mongo
