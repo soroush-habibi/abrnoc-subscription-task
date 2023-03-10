@@ -21,6 +21,7 @@ interface invoice {
     _id: mongodb.ObjectId,
     userId: mongodb.ObjectId,
     subId: mongodb.ObjectId,
+    name: string,
     startTime: Date,
     endTime?: Date
 }
@@ -107,7 +108,7 @@ export default class db {
             active: true
         });
 
-        await this.addInvoice(String(result.insertedId), userId, price);
+        await this.addInvoice(String(result.insertedId), userId, price, name);
 
         return result.insertedId;
     }
@@ -122,7 +123,7 @@ export default class db {
         return subs;
     }
 
-    static async addInvoice(subId: string, userId: string, price: number) {
+    static async addInvoice(subId: string, userId: string, price: number, name: string) {
         if (!mongodb.ObjectId.isValid(subId) || !mongodb.ObjectId.isValid(userId)) {
             throw new Error("User ID or sub Id is not valid");
         } else if (price < 0) {
@@ -136,6 +137,7 @@ export default class db {
             userId: mongodb.ObjectId.createFromHexString(userId),
             subId: mongodb.ObjectId.createFromHexString(subId),
             price: price,
+            name: name,
             startTime: timeNow
         });
 
@@ -153,7 +155,7 @@ export default class db {
                 if (invoice.matchedCount != 0) {
                     await this.creditReduction(userId, price);
 
-                    await this.addInvoice(subId, userId, price);
+                    await this.addInvoice(subId, userId, price, sub.name);
                 }
             } else {
                 await this.deleteIncompleteInvoice(subId).catch(e => { });
@@ -273,7 +275,7 @@ export default class db {
         });
 
         if (sub) {
-            await this.addInvoice(subId, String(sub.userId), sub.price);
+            await this.addInvoice(subId, String(sub.userId), sub.price, sub.name);
         }
 
         return result.acknowledged;

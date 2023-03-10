@@ -74,7 +74,7 @@ export default class db {
             userId: mongodb.ObjectId.createFromHexString(userId),
             active: true
         });
-        await this.addInvoice(String(result.insertedId), userId, price);
+        await this.addInvoice(String(result.insertedId), userId, price, name);
         return result.insertedId;
     }
     static async getSubscriptions(userId) {
@@ -84,7 +84,7 @@ export default class db {
         const subs = await this.client.db("abrnoc").collection("subs").find({ userId: mongodb.ObjectId.createFromHexString(userId) }).toArray();
         return subs;
     }
-    static async addInvoice(subId, userId, price) {
+    static async addInvoice(subId, userId, price, name) {
         if (!mongodb.ObjectId.isValid(subId) || !mongodb.ObjectId.isValid(userId)) {
             throw new Error("User ID or sub Id is not valid");
         }
@@ -99,6 +99,7 @@ export default class db {
             userId: mongodb.ObjectId.createFromHexString(userId),
             subId: mongodb.ObjectId.createFromHexString(subId),
             price: price,
+            name: name,
             startTime: timeNow
         });
         Nodeschedule.scheduleJob(new Date(timeNow.getTime() + (1000 * 60 * 10)), async () => {
@@ -113,7 +114,7 @@ export default class db {
                 });
                 if (invoice.matchedCount != 0) {
                     await this.creditReduction(userId, price);
-                    await this.addInvoice(subId, userId, price);
+                    await this.addInvoice(subId, userId, price, sub.name);
                 }
             }
             else {
@@ -216,7 +217,7 @@ export default class db {
             }
         });
         if (sub) {
-            await this.addInvoice(subId, String(sub.userId), sub.price);
+            await this.addInvoice(subId, String(sub.userId), sub.price, sub.name);
         }
         return result.acknowledged;
     }
