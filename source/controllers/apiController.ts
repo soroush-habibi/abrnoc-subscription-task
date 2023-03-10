@@ -297,6 +297,32 @@ export default class controller {
         });
     }
 
+    static getInvoices(req: express.Request, res: express.Response) {
+        db.connect((client) => {
+            db.getInvoices(res.locals.id).then((value) => {
+                if (value) {
+                    res.status(200).json({
+                        success: true,
+                        body: value,
+                        message: "OK"
+                    });
+                } else {
+                    res.status(500).json({
+                        success: false,
+                        body: null,
+                        message: "operation failed"
+                    });
+                }
+            }).catch((err: Error) => {
+                res.status(400).json({
+                    success: false,
+                    body: null,
+                    message: err.message
+                });
+            });
+        });
+    }
+
     static logout(req: express.Request, res: express.Response) {
         res.clearCookie("JWT");
         res.status(200).json({

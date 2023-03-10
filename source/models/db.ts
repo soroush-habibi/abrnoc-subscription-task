@@ -161,6 +161,19 @@ export default class db {
         });
     }
 
+    static async getInvoices(userId: string): Promise<invoice[]> {
+        if (!mongodb.ObjectId.isValid(userId)) {
+            throw new Error("User ID is not valid");
+        }
+
+        const result = await this.client.db("abrnoc").collection<invoice>("invoice").find({
+            userId: mongodb.ObjectId.createFromHexString(userId),
+            endTime: { $exists: true }
+        }).toArray();
+
+        return result;
+    }
+
     static async deleteIncompleteInvoice(subId: string): Promise<boolean> {
         if (!mongodb.ObjectId.isValid(subId)) {
             throw new Error("Sub ID is not valid");
