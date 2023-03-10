@@ -11,3 +11,8 @@ body {
 .hover:hover {
     cursor: pointer;
 }
+
+#invoice-title,
+#sub-title {
+    margin: 20px;
+}
