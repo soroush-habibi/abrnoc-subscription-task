@@ -2,7 +2,10 @@ const username = document.querySelector("#username");
 const id = document.querySelector("#id");
 const credit = document.querySelector("#credit");
 const subsUl = document.querySelector("#subs-ul");
+const invoicesUl = document.querySelector("#invoices-ul");
+const invoicesTitle = document.querySelector("#invoice-title");
 const subLoading = document.querySelector("#sub-loading");
+const invoiceLoading = document.querySelector("#invoice-loading");
 
 // buttons
 const logout = document.querySelector("#logout");
@@ -203,6 +206,47 @@ async function loadData() {
                 subLoading.classList.remove("d-none");
                 subsUl.classList.add("d-none");
                 subLoading.innerHTML = "You don't have any subscription.please add one from orange section above!"
+            }
+        } else {
+            alert(data.message);
+        }
+    } catch (e) {
+        alert(e.response.data.message);
+    }
+
+    //load invoices
+    try {
+        invoiceLoading.classList.remove("d-none");
+        invoicesUl.classList.add("d-none");
+        invoiceLoading.innerHTML = "Loading..."
+        invoicesTitle.innerHTML = ` - Invoices <span class="badge text-bg-success">Total:Loading...</span>`;
+        const { data } = await axios.get("/api/invoices");
+
+        if (data.success) {
+            if (data.body.length > 0) {
+                let li = "";
+                let price = 0;
+                for (let i of data.body) {
+                    price += i.price;
+                    li += `<li class="list-group-item d-flex bg-light">
+                    <span class="title flex-grow-1 d-flex align-items-center">
+                        <label>${i.subId}</label>
+                    </span>
+                    <span class="price badge text-bg-info me-3 align-self-center">${i.price}$</span>
+                    <span class="time badge text-bg-info align-self-center">Start:
+                        ${moment(i.startTime).local().format("MMMM Do YYYY, h:mm:ss a")}<br />End:&nbsp;&nbsp;&nbsp;
+                        ${moment(i.endTime).local().format("MMMM Do YYYY, h:mm:ss a")}</span>
+                </li>`;
+                }
+
+                invoicesTitle.innerHTML = ` - Invoices <span class="badge text-bg-success">Total:${price}$</span>`;
+                invoicesUl.innerHTML = li;
+                invoiceLoading.classList.add("d-none");
+                invoicesUl.classList.remove("d-none");
+            } else {
+                invoiceLoading.classList.remove("d-none");
+                invoicesUl.classList.add("d-none");
+                invoiceLoading.innerHTML = "You don't have any Invoices!"
             }
         } else {
             alert(data.message);
