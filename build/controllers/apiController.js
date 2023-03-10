@@ -199,7 +199,7 @@ export default class controller {
         });
     }
     static deleteSub(req, res) {
-        if (!req.body.subId) {
+        if (!req.query.subId) {
             res.status(400).json({
                 success: false,
                 body: null,
@@ -208,7 +208,7 @@ export default class controller {
             return;
         }
         db.connect((client) => {
-            db.deleteSub(req.body.subId).then((value) => {
+            db.deleteSub(decodeURIComponent(String(req.query.subId))).then((value) => {
                 if (value) {
                     res.status(200).json({
                         success: true,
@@ -249,14 +249,12 @@ export default class controller {
                         message: "operation failed"
                     });
                 }
-                client.close();
             }).catch((err) => {
                 res.status(400).json({
                     success: false,
                     body: null,
                     message: err.message
                 });
-                client.close();
             });
         });
     }
@@ -277,14 +275,12 @@ export default class controller {
                         message: "operation failed"
                     });
                 }
-                client.close();
             }).catch((err) => {
                 res.status(400).json({
                     success: false,
                     body: null,
                     message: err.message
                 });
-                client.close();
             });
         });
     }
@@ -321,14 +317,12 @@ export default class controller {
                         message: "operation failed"
                     });
                 }
-                client.close();
             }).catch((err) => {
                 res.status(400).json({
                     success: false,
                     body: null,
                     message: err.message
                 });
-                client.close();
             });
         });
     }
